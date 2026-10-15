@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "SeinePINN_1D: a hybrid LSTM physics-informed neural network for 1-D tidal-river hydrodynamics"
+version: 1.0.0
+date-released: 2026-10-14
+license: MIT
+repository-code: "https://github.com/Ranveer82/SeinePINN/tree/SeinePINN_1D"
+authors:
+  - family-names: Kumar
+    given-names: Ranveer
+    affiliation: "BRGM-French Geological Survey, F-76130 Mont St Aignan, France"
+    orcid: "https://orcid.org/0000-0001-7530-3581"
+  - family-names: David
+    given-names: Pierre-Yann
+    affiliation: "BRGM-French Geological Survey, F-76130 Mont St Aignan, France"
+abstract: >-
+  SeinePINN_1D reconstructs water level, velocity and discharge along a whole
+  tidal river from its boundary forcing alone (upstream discharge, downstream
+  stage and tributaries). It couples an LSTM encoder of the forcing with a
+  harmonic tidal branch, a hard downstream boundary condition and
+  non-dimensional Saint-Venant residuals, and is applied to the 137.7 km Seine
+  estuary (France) over 2007-2025 and to a synthetic estuary with a known
+  solution.
+keywords:
+  - physics-informed neural network
+  - Saint-Venant equations
+  - tidal river
+  - estuary
+  - hydrodynamics
+  - LSTM
+  - Seine

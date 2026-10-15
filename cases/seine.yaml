@@ -1,0 +1,133 @@
+# =============================================================================
+# Case file: the Seine estuary, from the tidal limit (x = 0) to Tancarville (x = 137.7 km)
+#
+# Run:
+#   python run_train.py    cases/seine.yaml
+#   python run_evaluate.py cases/seine.yaml --period test
+#   python run_predict.py  cases/seine.yaml --start 2018-01-22 --end 2018-02-08
+#
+# Paths are relative to this file. The input files are described in
+# data/README.md. Elevations in the input files are in m NGF (IGN69).
+# =============================================================================
+
+name: seine_estuary
+data_dir: ../data/seine
+output_dir: ../outputs/seine
+
+# --- Bathymetry ---------------------------------------------------------------
+# Cross sections cut from the DEM along the centreline, every 100 m
+# (tools/raster_to_transects.py). Columns X_m, d_0..d_N, h_0..h_N.
+geometry: river_profiles_raster.csv
+
+# Added to every elevation (bathymetry, stage, gauges) so the working datum is
+# positive. Outputs are converted back to m NGF.
+datum_shift: 4.38
+
+# --- Boundary conditions ------------------------------------------------------
+# Upstream: hourly discharge entering the reach (m3/s).
+upstream:
+  file: Q_in_vernon.csv
+  value_col: discharge
+
+# Downstream: stage at Tancarville (m NGF), imposed exactly by the network.
+downstream:
+  file: boundary_downstream.csv
+  value_col: stage
+
+# --- Tributaries --------------------------------------------------------------
+# One file with a column per tributary (m3/s). x is the chainage of the
+# confluence (m); sigma is the length over which the inflow is spread (m).
+tributaries_file:
+  file: tributaries.csv
+tributaries:
+  - {name: Andelle, column: Andelle_o, x: 732.0,   sigma: 250.0}
+  - {name: Eure,    column: Eure_o,    x: 14732.0, sigma: 500.0}
+  - {name: Cailly,  column: Cailly_o,  x: 44000.0, sigma: 500.0}
+
+# --- Gauges -------------------------------------------------------------------
+# A folder with one file per station (columns timestamp, stage_m, X_m), at
+# the native sampling of each station (5 or 10 min).
+gauges:
+  file: gage_stations
+  value_col: stage_m
+gauge_x_col: X_m
+gauge_velocity_col: null
+
+# Keep one reading per station per hour (the reading nearest the hour).
+gauge_step_h: 1.0
+
+# --- Periods ------------------------------------------------------------------
+# Model time is in seconds since `epoch`. Training, validation (for any choice
+# made by looking at a score) and test (scored once) must not overlap.
+epoch: 2007-01-01 00:00:00
+train_start: 2007-01-01 00:00:00
+train_end:   2018-12-31 23:00:00
+val_start:   2019-01-01 00:00:00
+val_end:     2021-12-31 23:00:00
+test_start:  2022-01-01 00:00:00
+test_end:    2025-12-31 23:00:00
+
+# --- Physics ------------------------------------------------------------------
+physics:
+  tidal: true
+  constituents: auto            # 16 constituents: M2, S2, N2, ..., M4, M6, M8
+  # slow periods of the sub-tidal branch (h): annual, semi-annual, quarterly,
+  # 30 days, spring-neap (MSf) and weekly
+  subtidal_periods_h: [8765.81, 4382.91, 2191.45, 720.0, 354.367, 168.0]
+  # bounds and number of control points of the Manning roughness n(x)
+  manning_min: 0.012
+  manning_max: 0.050
+  manning_nodes: 20
+  min_depth: 0.05
+  # smooth the area A(x) along the channel over 2 km (survey noise)
+  geometry_smooth_m: 2000.0
+  # remove the DEM no-data fill from the transects
+  trace_edges: true
+  # close truncated sections with extended banks (not a levee)
+  flood_barrier: false
+  barrier_freeboard_m: 4.0
+  # divided-channel method: main channel and floodplains convey separately
+  compound_channel: true
+  bankfull_smooth_m: 5000.0
+  # no learnable width correction
+  geometry_tolerance: 0.0
+  geometry_nodes: 16
+  lateral_sigma: 500.0
+  eddy_viscosity: 0.0
+  lateral_momentum: 0.0
+
+# --- Training -----------------------------------------------------------------
+train:
+  window_days: 30.0             # about two spring-neap cycles
+  window_overlap_days: 3.0
+  n_collocation: 8192           # points where the equations are checked, per step
+  n_data: 2048                  # boundary and gauge points per step
+  warmup_steps: 800             # data-only warm start
+  march_steps: 500              # per window, 163 windows over 2007-2018
+  refine_steps: 40000           # final pass over random windows
+  lr: 1.0e-3
+  lr_final: 1.0e-5
+  grad_clip: 1.0
+  causal_eps: 1.0               # causal weighting in time inside each window
+  causal_bins: 32
+  causal_floor: 0.05
+  balance_every: 100            # update the adaptive loss weights every 100 steps
+  balance_alpha: 0.9
+  divergence_factor: 1000.0     # roll back a step whose loss jumps 1000x
+  snapshot_every: 200
+  seed: 0
+
+# --- Network ------------------------------------------------------------------
+model:
+  discharge_output: true        # second output is Q; u = Q / A
+  hidden_dim: 128
+  n_layers: 5
+  activation: SiLU
+  lstm_hidden: 48
+  lstm_layers: 1
+  residual_branch: true
+  # geometry surrogate A(x, eta), P(x, eta)
+  geo_hidden_dim: 128
+  geo_layers: 5
+  geo_fourier: 32
+  geo_max_period_ratio: 400.0

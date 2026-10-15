@@ -1,0 +1,93 @@
+# =============================================================================
+# Case file: synthetic tidal estuary (a twin with a known solution)
+#
+# A 40 km funnel-shaped estuary integrated by a finite-volume Saint-Venant
+# solver (tools/make_synthetic_case.py). Only the stage at five gauges is used
+# for training; the true velocity and discharge everywhere are kept to score
+# the fields the model never sees.
+#
+# Make the data, then train and evaluate:
+#   python tools/make_synthetic_case.py --out data/synthetic
+#   python run_train.py    cases/synthetic.yaml
+#   python run_evaluate.py cases/synthetic.yaml --period validation
+# =============================================================================
+
+name: synthetic_estuary
+data_dir: ../data/synthetic
+output_dir: ../outputs/synthetic
+
+geometry: river_profiles.csv
+datum_shift: 0.0
+
+upstream:
+  file: upstream_Q.csv
+  value_col: discharge
+
+downstream:
+  file: downstream_stage.csv
+  value_col: stage
+
+tributaries_file:
+  file: tributaries.csv
+tributaries:
+  - {name: trib_upper, column: trib_upper, x: 8800.0,  sigma: 600.0}
+  - {name: trib_lower, column: trib_lower, x: 27200.0, sigma: 800.0}
+
+gauges:
+  file: gauges.csv
+  value_col: stage_m
+gauge_x_col: X_m
+# The true velocity at the gauges: used only to score the model, never in
+# training.
+gauge_velocity_col: velocity_ms
+
+epoch: 2020-01-01 00:00:00
+train_start: 2020-01-01 00:00:00
+train_end:   2020-03-01 00:00:00
+val_start:   2020-03-01 00:00:00
+val_end:     2020-03-16 00:00:00
+test_start:  2020-03-16 00:00:00
+test_end:    2020-03-31 00:00:00
+
+physics:
+  tidal: true
+  # the solver is forced by M2, S2, N2, K1, O1 and M4; the model gets a few
+  # more, as it would on a real river
+  constituents: [M2, S2, N2, K1, O1, M4, MS4, M6]
+  subtidal_periods_h: [4382.91, 2191.45, 720.0, 354.367, 168.0]
+  manning_min: 0.012
+  manning_max: 0.060
+  manning_nodes: 12
+  min_depth: 0.05
+  lateral_sigma: 700.0
+
+train:
+  window_days: 15.0
+  window_overlap_days: 2.0
+  n_collocation: 3072
+  n_data: 1024
+  warmup_steps: 500
+  march_steps: 700
+  refine_steps: 6000
+  lr: 2.0e-3
+  lr_final: 1.0e-5
+  grad_clip: 1.0
+  causal_eps: 1.0
+  causal_bins: 24
+  balance_every: 100
+  balance_alpha: 0.9
+  adaptive_fraction: 0.5        # half of the points drawn where the residual is large
+  adaptive_after: 1500
+  lbfgs_steps: 500              # L-BFGS polish at the end
+  seed: 0
+
+model:
+  hidden_dim: 96
+  n_layers: 4
+  activation: SiLU
+  lstm_hidden: 32
+  lstm_layers: 1
+  residual_branch: true
+  geo_hidden_dim: 96
+  geo_layers: 4
+  geo_fourier: 0                # the analytic channel needs no Fourier features

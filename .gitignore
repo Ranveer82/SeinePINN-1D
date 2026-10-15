@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# Input data are not part of the release (see data/README.md)
+data/seine
+data/synthetic
+
+# Outputs of training, evaluation and prediction
+outputs/
