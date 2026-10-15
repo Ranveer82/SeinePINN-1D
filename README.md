@@ -67,8 +67,7 @@ SeinePINN_1D/
 
 1. **Clone the repository:**
    ```bash
-   git clone -b SeinePINN_1D https://github.com/Ranveer82/SeinePINN.git SeinePINN_1D
-   cd SeinePINN_1D
+   git clone -b SeinePINN_1D https://github.com/Ranveer82/SeinePINN-1D.git
    ```
 
 2. **Create and activate the Conda environment:**
