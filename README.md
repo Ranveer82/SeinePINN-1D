@@ -87,7 +87,7 @@ The model runs in double precision on a GPU when one is available, otherwise on 
 
 ## Input Data
 
-The input files are **not included** in this release; their formats and sources are described in [`data/README.md`](data/README.md). A case needs:
+The input files are **not included** in this release due to size, but can be downloaded from [10.5281/zenodo.23260742]; their formats and sources are described in [`data/README.md`](data/README.md). A case needs:
 
 ### 1. Cross sections (`river_profiles_raster.csv`)
 The shape of the river bed, one row per section.
