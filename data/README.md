@@ -1,6 +1,6 @@
 # Input data
 
-The input files are not part of this release. Place them here with the
+The input files are not part of this release due to conventions with HAROPA PORT. Although most of the data is openly avaialable at hydroportal. Place them here with the
 layout below, or point `data_dir` in the case file to another folder.
 
 ```text
